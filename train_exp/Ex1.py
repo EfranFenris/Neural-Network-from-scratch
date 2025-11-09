@@ -6,7 +6,7 @@ ROOT = os.path.dirname(os.path.dirname(__file__))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from models import MyFFNetworkForClassification, MyFFNetworkForRegression
+from models import MyFFNetworkForRegression
 from train import train_one_epoch, evaluate
 from dataset import load_forestfires_processed
 import torch
