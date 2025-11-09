@@ -12,3 +12,7 @@ ENV/
 .vscode/
 .idea/
 .DS_Store
+
+# Data folders
+data/processed/
+data/raw/

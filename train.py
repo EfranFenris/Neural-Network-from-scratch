@@ -19,7 +19,19 @@ from models import MyFFNetworkForClassification, MyFFNetworkForRegression
 
 
 def train_one_epoch(model, X, y, lr: float, batch_size: int, task: str):
-    """One simple training pass over X,y with mini-batches. Returns (avg_loss, acc_or_None)."""
+    """
+    Runs one epoch of training on the given model and data using mini-batch SGD.
+    Args:
+        model: The neural network (manual forward/backward/step).
+        X: Input features (tensor).
+        y: Target labels or values (tensor).
+        lr: Learning rate for SGD.
+        batch_size: Mini-batch size.
+        task: 'clf' for classification, 'reg' for regression.
+    Returns:
+        avg_loss: Average loss over the epoch.
+        acc_or_None: Accuracy (classification) or None (regression).
+    """
     model.zero_grad()
     N = X.shape[0]
     perm = torch.randperm(N)
@@ -56,9 +68,19 @@ def train_one_epoch(model, X, y, lr: float, batch_size: int, task: str):
         return avg_loss, None
 
 
-@torch.no_grad() #what this does is prevent tracking gradients during evaluation
+@torch.no_grad()
 def evaluate(model, X, y, task: str):
-    """Forward in 'eval' mode (BN would use running stats). Returns (loss, acc_or_mse)."""
+    """
+    Evaluates the model on the given data in evaluation mode (no gradient tracking).
+    Args:
+        model: The neural network.
+        X: Input features (tensor).
+        y: Target labels or values (tensor).
+        task: 'clf' for classification, 'reg' for regression.
+    Returns:
+        loss: Loss value (cross-entropy or MSE).
+        acc_or_mse: Accuracy (classification) or MSE (regression).
+    """
     y_pred, _ = model.forward(X, training=False)
     if task == "clf":
         # Cross-entropy loss value for info (uses model's helper)
@@ -73,7 +95,19 @@ def evaluate(model, X, y, task: str):
 
 
 def fit(model, Xtr, ytr, Xte, yte, task: str, epochs: int, lr: float, batch_size: int):
-    """Train loop that stores learning curves."""
+    """
+    Trains the model for a given number of epochs, tracking learning curves.
+    Args:
+        model: The neural network.
+        Xtr, ytr: Training data and labels.
+        Xte, yte: Test/validation data and labels.
+        task: 'clf' or 'reg'.
+        epochs: Number of training epochs.
+        lr: Learning rate.
+        batch_size: Mini-batch size.
+    Returns:
+        train_losses, train_metrics, test_losses, test_metrics: Lists of loss/metric values per epoch.
+    """
     train_losses, train_metrics = [], []
     test_losses, test_metrics = [], []
 
@@ -95,22 +129,38 @@ def fit(model, Xtr, ytr, Xte, yte, task: str, epochs: int, lr: float, batch_size
 
 
 def plot_learning_curves(title, train_losses, test_losses, train_metric, test_metric, metric_name, outfile):
+    """
+    Plots and saves learning curves (loss and metric) for training and test sets.
+    Args:
+        title: Plot title.
+        train_losses, test_losses: Lists of loss values per epoch.
+        train_metric, test_metric: Lists of metric values (acc or mse) per epoch.
+        metric_name: Name of the metric ('acc' or 'mse').
+        outfile: Base filename for saving plots (will be placed in graphs_toy/).
+    """
     if not _HAVE_PLT:
         return
+    import os
+    outdir = "graphs_toy"
+    os.makedirs(outdir, exist_ok=True)
+    base = os.path.join(outdir, os.path.basename(outfile))
+    loss_path = base.replace(".png", "_loss.png")
+    metric_path = base.replace(".png", f"_{metric_name}.png")
+
     plt.figure()
     plt.plot(train_losses, label="train loss")
     plt.plot(test_losses, label="test loss")
     plt.xlabel("epoch"); plt.ylabel("loss"); plt.title(f"{title} — Loss"); plt.legend()
     plt.tight_layout()
-    plt.savefig(outfile.replace(".png", "_loss.png")); plt.close()
+    plt.savefig(loss_path); plt.close()
 
     plt.figure()
     plt.plot(train_metric, label=f"train {metric_name}")
     plt.plot(test_metric, label=f"test {metric_name}")
     plt.xlabel("epoch"); plt.ylabel(metric_name); plt.title(f"{title} — {metric_name}"); plt.legend()
     plt.tight_layout()
-    plt.savefig(outfile.replace(".png", f"_{metric_name}.png")); plt.close()
-    print(f"Saved plots to: {outfile.replace('.png', '_loss.png')} and {outfile.replace('.png', f'_{metric_name}.png')}")
+    plt.savefig(metric_path); plt.close()
+    print(f"Saved plots to: {loss_path} and {metric_path}")
 
 
 def run_classification_demo():
