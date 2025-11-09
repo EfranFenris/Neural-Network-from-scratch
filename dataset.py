@@ -117,6 +117,7 @@ def load_forestfires_processed(
 
     return X_tr.float(), y_tr.float(), X_te.float(), y_te.float()
 
-# Save the processed dataset
 
-make_forestfires_processed()
+# Only create the processed dataset if this script is run directly
+if __name__ == "__main__":
+    make_forestfires_processed()

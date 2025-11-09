@@ -1,18 +1,24 @@
+import os
+import sys
+
+# Add project root to Python path so we can import models, train, dataset
+ROOT = os.path.dirname(os.path.dirname(__file__))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
 from models import MyFFNetworkForClassification, MyFFNetworkForRegression
 from train import train_one_epoch, evaluate
 from dataset import load_forestfires_processed
 import torch
-
 import matplotlib.pyplot as plt
-import os
-
+import os as _os  # you can reuse os above if you want
 
 def run_lr_sanity_check_forestfires():
     # 1) Load processed Forest Fires dataset
     Xtr, ytr, Xte, yte = load_forestfires_processed()
 
     # Common training settings
-    epochs = 40
+    epochs = 100
     batch_size = 64
 
     # Helper: train the SAME architecture with a given lr
@@ -54,12 +60,12 @@ def run_lr_sanity_check_forestfires():
 
     # 2) Run for small and large LR
     small_lr = 1e-6
-    big_lr = 1.0
+    big_lr = 1e-1
 
     print("\n=== Small learning rate (1e-6) ===")
     tr_small, te_small = train_with_lr(small_lr)
 
-    print("\n=== Large learning rate (1.0) ===")
+    print("\n=== Large learning rate (0.1) ===")
     tr_big, te_big = train_with_lr(big_lr)
 
     # 3) Plot learning curves
@@ -68,7 +74,7 @@ def run_lr_sanity_check_forestfires():
     # Train loss curves
     plt.figure()
     plt.plot(tr_small, label="train loss (lr=1e-6)")
-    plt.plot(tr_big, label="train loss (lr=1.0)")
+    plt.plot(tr_big, label="train loss (lr=0.1)")
     plt.xlabel("Epoch")
     plt.ylabel("Train MSE")
     plt.title("Learning rate sanity check (Forest Fires, regression)")
@@ -80,7 +86,7 @@ def run_lr_sanity_check_forestfires():
     # Test loss curves
     plt.figure()
     plt.plot(te_small, label="test loss (lr=1e-6)")
-    plt.plot(te_big, label="test loss (lr=1.0)")
+    plt.plot(te_big, label="test loss (lr=0.1)")
     plt.xlabel("Epoch")
     plt.ylabel("Test MSE")
     plt.title("Learning rate sanity check (Forest Fires, regression)")
@@ -97,8 +103,8 @@ def run_lr_sanity_check_forestfires():
 
     # 4) Short printed explanation for your report
     print("Summary:")
-    print("- lr=1e-6: very small steps -> loss decreases (if at all) extremely slowly, stable but impractical.")
-    print("- lr=1: very large steps -> updates are unstable, loss typically oscillates or increases.")
+    print("- lr=1e-6: very small steps -> loss decreases extremely slowly, stable but impractical.")
+    print("- lr=1: very large steps -> updates are unstable, loss oscillates or increases.")
     print("Conclusion: learning rate controls step size: too small = slow convergence, too large = unstable training.")
 
 
