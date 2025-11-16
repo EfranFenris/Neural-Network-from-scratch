@@ -233,3 +233,107 @@ def load_mnist_processed(processed_dir: str = "data/processed"):
     te = torch.load(test_pt)
 
     return tr["X"].float(), tr["y"].long(), te["X"].float(), te["y"].long()
+# ================================
+# Loading affNIST centered dataset (for Ex5)
+# ================================
+
+import os
+import numpy as np
+import torch
+import scipy.io as spio
+
+def _mat_to_dict(path):
+    """Load .mat and convert MATLAB structs to plain dicts."""
+    data = spio.loadmat(path, struct_as_record=False, squeeze_me=True)
+
+    def _to_dict(obj):
+        if isinstance(obj, spio.matlab.mio5_params.mat_struct):
+            return {name: _to_dict(getattr(obj, name)) for name in obj._fieldnames}
+        return obj
+
+    return {k: _to_dict(v) for k, v in data.items()}
+
+
+def make_affnist_centered_processed(
+    mat_path: str = "data/raw/just_centered/training_and_validation.mat",
+    processed_dir: str = "data/processed",
+    train_ratio: float = 0.8,
+    seed: int = 0,
+) -> None:
+    """
+    Build cached tensors from affNIST 'just_centered' and save:
+      data/processed/affnist_centered_train.pt
+      data/processed/affnist_centered_test.pt
+    """
+    os.makedirs(processed_dir, exist_ok=True)
+    dd = _mat_to_dict(mat_path)["affNISTdata"]
+
+    # X: (1600, N) -> (N,1600), normalize to [0,1]
+    X = np.asarray(dd["image"], dtype=np.float32).T
+    if X.max() > 1.5:
+        X = X / 255.0
+
+    # y: sometimes '0' is encoded as 10 -> map back to 0
+    y = np.asarray(dd["label_int"]).astype(np.int64)
+    if y.max() == 10:
+        y[y == 10] = 0
+
+    X = torch.from_numpy(X).float()
+    y = torch.from_numpy(y).long()
+
+    # split
+    N = X.shape[0]
+    torch.manual_seed(seed)
+    perm = torch.randperm(N)
+    n_tr = int(train_ratio * N)
+    tr_idx, te_idx = perm[:n_tr], perm[n_tr:]
+
+    torch.save({"X": X[tr_idx], "y": y[tr_idx]},
+               os.path.join(processed_dir, "affnist_centered_train.pt"))
+    torch.save({"X": X[te_idx], "y": y[te_idx]},
+               os.path.join(processed_dir, "affnist_centered_test.pt"))
+
+    print(f"Saved processed affNIST to {processed_dir}/affnist_centered_train.pt "
+          f"and {processed_dir}/affnist_centered_test.pt")
+
+
+def load_affnist_centered_processed(
+    processed_dir: str = "data/processed",
+    mat_path: str = "data/raw/just_centered/training_and_validation.mat",
+    train_ratio: float = 0.8,
+    seed: int = 0,
+    subsample_train: int | None = None,
+    subsample_test: int | None = None,
+):
+    """
+    Load cached affNIST centered tensors; build them from the .mat if missing.
+
+    Returns:
+        X_tr: [N_tr, 1600] float32 in [0,1]
+        y_tr: [N_tr]       int64
+        X_te: [N_te, 1600]
+        y_te: [N_te]
+    """
+    tr_pt = os.path.join(processed_dir, "affnist_centered_train.pt")
+    te_pt = os.path.join(processed_dir, "affnist_centered_test.pt")
+
+    if not (os.path.exists(tr_pt) and os.path.exists(te_pt)):
+        make_affnist_centered_processed(
+            mat_path=mat_path,
+            processed_dir=processed_dir,
+            train_ratio=train_ratio,
+            seed=seed,
+        )
+
+    tr = torch.load(tr_pt)
+    te = torch.load(te_pt)
+    Xtr, ytr = tr["X"].float(), tr["y"].long()
+    Xte, yte = te["X"].float(), te["y"].long()
+
+    # optional fast runs
+    if subsample_train is not None and Xtr.shape[0] > subsample_train:
+        Xtr, ytr = Xtr[:subsample_train], ytr[:subsample_train]
+    if subsample_test is not None and Xte.shape[0] > subsample_test:
+        Xte, yte = Xte[:subsample_test], yte[:subsample_test]
+
+    return Xtr, ytr, Xte, yte
