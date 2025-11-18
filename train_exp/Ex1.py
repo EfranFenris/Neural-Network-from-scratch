@@ -59,8 +59,8 @@ def run_lr_sanity_check_forestfires():
         return train_losses, test_losses
 
     # 2) Run for small and large LR
-    small_lr = 1e-6
-    big_lr = 1e-1
+    small_lr = 1e-3
+    big_lr = 1
 
     print("\n=== Small learning rate (1e-6) ===")
     tr_small, te_small = train_with_lr(small_lr)
@@ -101,13 +101,9 @@ def run_lr_sanity_check_forestfires():
         "  graphs_exp/lr_sanity_test_loss.png\n"
     )
 
-    # 4) Short printed explanation for your report
-    print("Summary:")
-    print("- lr=1e-6: very small steps -> loss decreases extremely slowly, stable but impractical.")
-    print("- lr=1: very large steps -> updates are unstable, loss oscillates or increases.")
-    print("Conclusion: learning rate controls step size: too small = slow convergence, too large = unstable training.")
-
-
+    # With lr = 1e-6 the blue curves are almost flat: train and test MSE hardly change, so the model basically doesn’t learn (very slow but stable).
+    #With lr = 0.1 the orange train curve drops quickly from ~2.5 to about 1, so learning is much faster, but the test curve becomes very noisy and unstable, with big spikes.
+    #So a higher learning rate speeds up convergence but hurts stability, while a very small one is stable but too slow to converge.
 if __name__ == "__main__":
     run_lr_sanity_check_forestfires()
 

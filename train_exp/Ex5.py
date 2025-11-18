@@ -146,18 +146,8 @@ def main():
     plot_curves("Ex5 affNIST", trL, trA, teL, teA)
     print(f"affNIST final test acc: {teA[-1]:.3f}")
 
-    # ------------- Brief comparison text -------------
-    print("\nSummary (use in your report):")
-    print(f"- MNIST test accuracy (last epoch):  {teA[-1]:.3f}")
-    # Careful: teA is from affNIST now; teA above overwritten. Recompute values:
-    # we already printed exact values; here we just hint what to discuss:
-    print("Our model performs better on affNIST (just_centered) " \
-    "mainly because (i) we created the test set by randomly splitting " \
-    "training_and_validation.mat, so train and test are from the same distribution," \
-    " whereas MNIST uses a separate official test; and (ii) the centered" \
-    " 40×40 affNIST images remove translation variability, which plain MLPs" \
-    " are sensitive to. The hyper-params (ReLU+He) also suit this setup, helping stable training.")
-
+#In our setup, train and test for affNIST come from the same file and are split randomly,
+#  so they look very similar. That makes generalization a bit easier.    
 
 if __name__ == "__main__":
     main()

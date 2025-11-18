@@ -1,0 +1,28 @@
+You can answer something like this:
+
+“The best configuration is ReLU with He initialization.
+In the train-loss plot the orange curve (ReLU_He) drops fastest
+ and reaches the lowest loss, and in the test-accuracy plot it also
+  reaches the highest, most stable accuracy.
+
+This happens because He initialization is designed specifically
+ for ReLU: it sets the weights with variance 2/\text{fan\_in},
+which compensates for the fact that roughly half of the ReLU
+units are zero. As a result, the activations and gradients 
+keep a reasonable scale across layers, so the network can learn quickly and stably.
+
+ReLU with Xavier (green) also works reasonably well, but a bit worse:
+Xavier assumes activations are roughly symmetric around zero (like tanh/sigmoid)
+and uses variance 1/\text{fan\_in}, so for ReLU the signal shrinks more and 
+training is slightly slower and less effective.
+
+The sigmoid configurations perform clearly worse. With Sigmoid+Xavier (blue)
+the loss decreases very slowly and test accuracy stays low, because sigmoid 
+activations saturate easily and cause vanishing gradients, so deeper layers 
+learn poorly. With Sigmoid+constant (red) the network almost does not learn at 
+all: all weights start with the same value, so all neurons compute the same thing 
+and receive identical gradients (symmetry problem), meaning the model cannot break 
+symmetry and discover diverse features.
+
+So overall, the combination whose theory matches the activation (ReLU + He) 
+gives the best convergence and final performance.”
