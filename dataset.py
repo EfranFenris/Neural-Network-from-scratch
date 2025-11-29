@@ -337,3 +337,107 @@ def load_affnist_centered_processed(
         Xte, yte = Xte[:subsample_test], yte[:subsample_test]
 
     return Xtr, ytr, Xte, yte
+
+
+# ================================
+# Fashion-MNIST (CSV) helpers
+# ================================
+import os
+import torch
+import pandas as pd
+
+def make_fashion_mnist_processed(
+    raw_train_path: str = "data/raw/fashion-mnist_train.csv",
+    raw_test_path: str  = "data/raw/fashion-mnist_test.csv",
+    processed_dir: str  = "data/processed",
+) -> None:
+    """
+    Convert Fashion-MNIST CSVs (label + 784 pixels) into normalized tensors and
+    save as:
+        data/processed/fashion_mnist_train.pt
+        data/processed/fashion_mnist_test.pt
+    Each file: {"X": FloatTensor [N,784] in [0,1], "y": LongTensor [N]}
+    """
+    if not os.path.exists(raw_train_path):
+        raise FileNotFoundError(f"Train CSV not found: {raw_train_path}")
+    if not os.path.exists(raw_test_path):
+        raise FileNotFoundError(f"Test CSV not found: {raw_test_path}")
+
+    os.makedirs(processed_dir, exist_ok=True)
+
+    # ---- train ----
+    df_tr = pd.read_csv(raw_train_path)
+    if "label" not in df_tr.columns:
+        raise ValueError("Expected a 'label' column in fashion-mnist_train.csv")
+    y_tr = df_tr["label"].astype("int64").values
+    X_tr = df_tr.drop(columns=["label"]).astype("float32").values / 255.0
+    torch.save({"X": torch.from_numpy(X_tr), "y": torch.from_numpy(y_tr)},
+               os.path.join(processed_dir, "fashion_mnist_train.pt"))
+
+    # ---- test ----
+    df_te = pd.read_csv(raw_test_path)
+    if "label" not in df_te.columns:
+        raise ValueError("Expected a 'label' column in fashion-mnist_test.csv")
+    y_te = df_te["label"].astype("int64").values
+    X_te = df_te.drop(columns=["label"]).astype("float32").values / 255.0
+    torch.save({"X": torch.from_numpy(X_te), "y": torch.from_numpy(y_te)},
+               os.path.join(processed_dir, "fashion_mnist_test.pt"))
+
+    print(f"Saved processed Fashion-MNIST to {processed_dir}/fashion_mnist_*.pt")
+
+
+def load_fashion_mnist_processed(
+    processed_dir: str = "data/processed",
+):
+    """
+    Load (or build if missing) Fashion-MNIST tensors.
+
+    Returns:
+        X_tr: [N_train, 784] float32 in [0,1]
+        y_tr: [N_train]      int64 labels 0..9
+        X_te: [N_test, 784]
+        y_te: [N_test]
+    """
+    train_pt = os.path.join(processed_dir, "fashion_mnist_train.pt")
+    test_pt  = os.path.join(processed_dir, "fashion_mnist_test.pt")
+
+    if not (os.path.exists(train_pt) and os.path.exists(test_pt)):
+        make_fashion_mnist_processed()  # uses default raw paths
+
+    tr = torch.load(train_pt)
+    te = torch.load(test_pt)
+    return tr["X"].float(), tr["y"].long(), te["X"].float(), te["y"].long()
+
+
+def load_fashion_mnist_for_ae(
+    processed_dir: str = "data/processed",
+    val_ratio: float = 0.1,
+    seed: int = 0,
+    limit_train: int | None = None,
+    limit_test: int | None = None,
+):
+    """
+    Convenience loader for autoencoders (reconstruction task).
+    Splits train into train/val and returns inputs only (labels also returned for logging).
+
+    Returns:
+        X_tr, X_val, X_te  (float32 in [0,1])
+        y_tr, y_val, y_te  (int64 labels, optional for monitoring)
+    """
+    X_tr, y_tr, X_te, y_te = load_fashion_mnist_processed(processed_dir)
+
+    if limit_train is not None and X_tr.shape[0] > limit_train:
+        X_tr, y_tr = X_tr[:limit_train], y_tr[:limit_train]
+    if limit_test is not None and X_te.shape[0] > limit_test:
+        X_te, y_te = X_te[:limit_test], y_te[:limit_test]
+
+    torch.manual_seed(seed)
+    N = X_tr.shape[0]
+    idx = torch.randperm(N)
+    n_val = int(val_ratio * N)
+    val_idx, tr_idx = idx[:n_val], idx[n_val:]
+
+    X_tr_, y_tr_   = X_tr[tr_idx], y_tr[tr_idx]
+    X_val_, y_val_ = X_tr[val_idx], y_tr[val_idx]
+
+    return X_tr_, X_val_, X_te, y_tr_, y_val_, y_te
