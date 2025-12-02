@@ -210,13 +210,22 @@ def run_experiments(
     print(f"Dataset={dataset_name}  |  train={Xtr.shape}  val={Xval.shape}  test={Xte.shape}")
 
     # Single best config (your benchmark winner)
-    grid = [ {
+    grid = [
+    {  # best
         "enc_dims":[256,128], "dec_dims":[256],
         "bn": True, "bn_where":"both",
         "init":"he", "act":"relu",
         "out_act":"linear", "loss":"mse",
         "lr":3e-3, "batch":128
-    } ]
+    },
+    {  
+        "enc_dims":[128,32], "dec_dims":[128],
+        "bn": False, "bn_where":"none",
+        "init":"xavier", "act":"sigmoid",
+        "out_act":"linear", "loss":"mse",
+        "lr":1e-3, "batch":128
+    }
+]
 
     best = {"val_loss": float("inf"), "state": None, "cfg": None}
     history: List[Dict] = []
@@ -276,4 +285,4 @@ def run_experiments(
     return history, best, save_path
 
 if __name__ == "__main__":
-    run_experiments(dataset_name="fashion", epochs=100, weight_decay=1e-5)
+    run_experiments(dataset_name="fashion", epochs=300, weight_decay=0)

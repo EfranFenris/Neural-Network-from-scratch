@@ -1,3 +1,4 @@
+# AE_run_compare.py
 import os, sys, subprocess, numpy as np
 import matplotlib
 matplotlib.use("Agg")
