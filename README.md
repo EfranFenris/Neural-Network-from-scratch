@@ -61,32 +61,6 @@ Loss functions:
 - Classification: stable softmax + cross-entropy with manual gradient
 - Regression: Mean Squared Error
 
-## Extending the project
-Ideas you can try next:
-- Add numerical gradient checking (finite differences) to validate manual backprop.
-- Implement additional activations (e.g., Tanh, LeakyReLU) and initializations.
-- Add learning rate schedulers or momentum.
-- Support more than 2 hidden layers by generalizing construction loops.
-- Add dropout (manual forward/backward) for regularization.
-- Port the training loop to use PyTorch DataLoader for larger datasets.
-- Compare manual gradients against autograd (wrap tensors with `requires_grad=True`).
-
-## Testing suggestion
-Create a small test to ensure backward gradients match numerical gradients:
-```python
-# pseudo-test idea
-import torch
-from models import MyFFNetworkForRegression
-
-model = MyFFNetworkForRegression(input_dim=3, hidden_dim=5, output_dim=2, num_hidden_layers=1, use_batchnorm=False)
-X = torch.randn(4, 3)
-y = torch.randn(4, 2)
-ypred, cache = model.forward(X)
-loss, dY = model.loss_and_grad(ypred, y)
-model.backward(X, cache, dY)
-# Now compare model.dW[0] to numerical approx...
-```
-
 ## License
 This repository is currently unlicensed. Consider adding an open-source license (e.g., MIT) if you plan to share or extend publicly.
 
