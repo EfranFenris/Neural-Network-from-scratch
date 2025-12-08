@@ -61,7 +61,7 @@ Supports both **classification** (logits + cross-entropy) and **regression** (ra
     *.png          # Generated plots from previous runs (learning curves)
     README.md      # This documentation (top-level file)
 
-*(If Lab 1 lives in a subfolder, these paths are relative to that folder.)*
+
 
 ### Running the Lab 1 demos
 
@@ -221,12 +221,13 @@ Good for checking when encoded representations help.
 To visualize the first-layer weights:
 
 1. Take each column of the first weight matrix  
-   \( W_0 \in \mathbb{R}^{784 \times H_1} \).
-2. Apply BatchNorm scale: \( \gamma / \sqrt{\text{var} + \varepsilon} \).
+   `W₀ ∈ ℝ^(784×H₁)`.
+2. Apply the BatchNorm scale factor for that unit  
+   (approximately `γ / sqrt(var + ε)`).
 3. Reshape each resulting length-784 vector to **28×28**.
 4. Render as grayscale:
-   - Bright = positive weight (excites neuron).
-   - Dark   = negative weight (inhibits neuron).
+   - Bright = positive weight (excites the neuron).
+   - Dark   = negative weight (inhibits the neuron).
 
 Number of images = **H₁** (number of layer-1 neurons).
 
@@ -234,15 +235,17 @@ Number of images = **H₁** (number of layer-1 neurons).
 
 ### L2 filters (back-projected) – `ae_fashion_filters_l2_backproj.png`
 
-Columns of  
-\( W_1 \in \mathbb{R}^{H_1 \times H_2} \)  
-live in layer-1 space. To view them in input space:
+Columns of the second encoder matrix
+
+- `W₁ ∈ ℝ^(H₁×H₂)`
+
+live in layer-1 feature space. To view them in input (pixel) space:
 
     W0_eff = W0 * (γ0 / √(var0 + ε))          # column-wise scale
     W1_eff = W1 * (γ1 / √(var1 + ε))
     backproj[:, j] = W0_eff @ W1_eff[:, j]    ∈ ℝ⁷⁸⁴
 
-Each `backproj[:, j]` is reshaped to 28×28 and plotted.  
+Each `backproj[:, j]` is reshaped to 28×28 and plotted as a grayscale image.  
 Number of images = **H₂**.
 
 ---
@@ -286,19 +289,19 @@ Checkpoint selection: epoch with **lowest `val_recon`** (early stopping).
 ## 5. Dimensions Cheat-Sheet (Lab 2)
 
 - **Input image:**  
-  \( x \in \mathbb{R}^{784} \) (flattened 28×28).
+  `x ∈ ℝ^784`  (flattened 28×28).
 
 - **Encoder layer 1:**  
-  \( W_0 \in \mathbb{R}^{784 \times H_1},\; b_0 \in \mathbb{R}^{H_1} \)  
-  → activations \( h_1 \in \mathbb{R}^{H_1} \).  
-  `H1` = number of L1 filter images.
+  `W₀ ∈ ℝ^(784×H₁)`, `b₀ ∈ ℝ^H₁`  
+  → activations `h₁ ∈ ℝ^H₁`.  
+  `H₁` = number of L1 filter images.
 
 - **Encoder layer 2 (latent):**  
-  \( W_1 \in \mathbb{R}^{H_1 \times H_2} \)  
-  → latent code \( z \in \mathbb{R}^{H_2} \).  
-  `H2` = latent dimension = number of L2 back-projected filters.
+  `W₁ ∈ ℝ^(H₁×H₂)`  
+  → latent code `z ∈ ℝ^H₂`.  
+  `H₂` = latent dimension = number of L2 back-projected filters.
 
-- **Decoder:** mirrors the encoder back to 784.
+- **Decoder:** mirrors the encoder back to dimension 784.
 
 ---
 
